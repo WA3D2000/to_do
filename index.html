@@ -29,7 +29,7 @@
 </main>
 
 
-  <script>
+ <script>
     const todoInput = document.querySelector(".todo-input");
     const todoButton = document.querySelector(".todo-button");
     const todoList = document.querySelector(".todo-list");
@@ -38,104 +38,119 @@
     document.addEventListener("DOMContentLoaded", getTodos);
 
     todoButton.addEventListener("click", function (e) {
-      e.preventDefault();
-      if (todoInput.value.trim() === "") return; // لو اليوزر مدخلش حاجه مش بتقبله 
+        e.preventDefault();
+        if (todoInput.value.trim() === "") return; // Prevent empty input
 
-      createTodoElement(todoInput.value); // بتخلي التاسك يظهر على الشاشه
-      saveLocalTodos(todoInput.value);  // بتسيف التاسك في ال local storage 
-      todoInput.value = "";
+        const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+        createTodoElement(todoInput.value, false, id); // Display the task on the screen
+        saveLocalTodos(todoInput.value, id);  // Save the task in local storage 
+        todoInput.value = "";
     });
 
-    function createTodoElement(text, completed = false) {
-      const todoDiv = document.createElement("div");
-      todoDiv.classList.add("todo");
-      if (completed) todoDiv.classList.add("completed");
+    function createTodoElement(text, completed = false, id = null) {
+        const todoDiv = document.createElement("div");
+        todoDiv.classList.add("todo");
+        if (completed) todoDiv.classList.add("completed");
 
-      const newTodo = document.createElement("li");
-      newTodo.innerText = text;
-      newTodo.classList.add("todo-item");
-      todoDiv.appendChild(newTodo);
+        // Use the provided id
+        const todoId = id || Date.now().toString() + Math.random().toString(36).substr(2, 9);
+        todoDiv.dataset.id = todoId;
 
-      const completeButton = document.createElement("button");
-      completeButton.innerHTML = '✔';
-      completeButton.classList.add("complete-btn");
-      todoDiv.appendChild(completeButton);
+        const newTodo = document.createElement("li");
+        newTodo.innerText = text;
+        newTodo.classList.add("todo-item");
+        todoDiv.appendChild(newTodo);
 
-      const deleteButton = document.createElement("button");
-      deleteButton.innerHTML = '🗑';
-      deleteButton.classList.add("trash-btn");
-      todoDiv.appendChild(deleteButton);
+        const completeButton = document.createElement("button");
+        completeButton.innerHTML = '✔';
+        completeButton.classList.add("complete-btn");
+        todoDiv.appendChild(completeButton);
 
-      todoList.appendChild(todoDiv);
+        const deleteButton = document.createElement("button");
+        deleteButton.innerHTML = '🗑';
+        deleteButton.classList.add("trash-btn");
+        todoDiv.appendChild(deleteButton);
+
+        todoList.appendChild(todoDiv);
     }
 
     todoList.addEventListener("click", function (e) {
-      const item = e.target;
+        const item = e.target;
 
-      if (item.classList.contains("trash-btn")) {
-        const todo = item.parentElement;
-        removeLocalTodos(todo);
-        todo.remove();
-      }
+        if (item.classList.contains("trash-btn")) {
+            const todo = item.parentElement;
+            removeLocalTodos(todo);
+            todo.remove();
+        }
 
-      if (item.classList.contains("complete-btn")) {
-        const todo = item.parentElement;
-        todo.classList.toggle("completed");
-        updateLocalTodos(todo);
-      }
+        if (item.classList.contains("complete-btn")) {
+            const todo = item.parentElement;
+            todo.classList.toggle("completed");
+            updateLocalTodos(todo);
+        }
     });
 
     filterOption.addEventListener("change", function (e) {
-      const todos = todoList.childNodes;
-      todos.forEach(function (todo) {
-        if (todo.nodeType === 1) {
-          switch (e.target.value) {
-            case "all":
-              todo.style.display = "flex";
-              break;
-            case "completed":
-              todo.style.display = todo.classList.contains("completed") ? "flex" : "none";
-              break;
-            case "uncompleted":
-              todo.style.display = !todo.classList.contains("completed") ? "flex" : "none";
-              break;
-          }
-        }
-      });
+        const todos = todoList.childNodes;
+        todos.forEach(function (todo) {
+            if (todo.nodeType === 1) {
+                switch (e.target.value) {
+                    case "all":
+                        todo.style.display = "flex";
+                        break;
+                    case "completed":
+                        todo.style.display = todo.classList.contains("completed") ? "flex" : "none";
+                        break;
+                    case "uncompleted":
+                        todo.style.display = !todo.classList.contains("completed") ? "flex" : "none";
+                        break;
+                    default:
+                        break;
+                }
+            }
+        });
     });
 
-    function saveLocalTodos(todoText) {
-      let todos = JSON.parse(localStorage.getItem("todos")) || [];
-      todos.push({ text: todoText, completed: false });
-      localStorage.setItem("todos", JSON.stringify(todos));
+    function saveLocalTodos(todoText, id) {
+        let todos = JSON.parse(localStorage.getItem("todos")) || [];
+        todos.push({ id: id, text: todoText, completed: false });
+        localStorage.setItem("todos", JSON.stringify(todos));
     }
 
     function getTodos() {
-      let todos = JSON.parse(localStorage.getItem("todos")) || [];
-      todos.forEach((todo) => {
-        createTodoElement(todo.text, todo.completed);
-      });
+        let todos = JSON.parse(localStorage.getItem("todos")) || [];
+        todos.forEach((todo) => {
+            createTodoElement(todo.text, todo.completed, todo.id);
+        });
     }
 
     function removeLocalTodos(todoElement) {
-      let todos = JSON.parse(localStorage.getItem("todos")) || [];
-      const todoText = todoElement.querySelector("li").innerText;
-      todos = todos.filter((t) => t.text !== todoText);
-      localStorage.setItem("todos", JSON.stringify(todos));
+        let todos = JSON.parse(localStorage.getItem("todos")) || [];
+        const todoId = todoElement.dataset.id;
+
+        // Filter out the todo with the specified id
+        todos = todos.filter((t) => t.id !== todoId);
+
+        // Update localStorage with the new todos array
+        localStorage.setItem("todos", JSON.stringify(todos));
     }
 
     function updateLocalTodos(todoElement) {
-      let todos = JSON.parse(localStorage.getItem("todos")) || [];
-      const todoText = todoElement.querySelector("li").innerText;
-      todos = todos.map((t) => {
-        if (t.text === todoText) {
-          return { ...t, completed: todoElement.classList.contains("completed") };
-        }
-        return t;
-      });
-      localStorage.setItem("todos", JSON.stringify(todos));
+        let todos = JSON.parse(localStorage.getItem("todos")) || [];
+        const todoId = todoElement.dataset.id;
+
+        // Map through todos and update the completed status of the specified todo
+        todos = todos.map((t) => {
+            if (t.id === todoId) {
+                return { ...t, completed: todoElement.classList.contains("completed") };
+            }
+            return t;
+        });
+
+        // Update localStorage with the modified todos array
+        localStorage.setItem("todos", JSON.stringify(todos));
     }
-  </script>
-  
+</script>
+
 </body>
 </html>
